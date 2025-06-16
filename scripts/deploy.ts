@@ -1,5 +1,5 @@
-const { ethers } = require("hardhat");
-const fs = require("fs");
+import { ethers } from "hardhat";
+import * as fs from "fs";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -19,18 +19,13 @@ async function main() {
   // Use the `target` property as the contract address
   const contractAddress = bot.target;
 
-  if (!contractAddress) {
-    console.error("Deployment failed: Contract address is undefined.");
-    process.exit(1);
-  }
+  console.log("Contract deployed at:", contractAddress);
 
-  console.log("Bot deployed at:", contractAddress);
-
-  // Save the contract address to the .env file
-  fs.appendFileSync(".env", `CONTRACT_ADDRESS=${contractAddress}\n`);
+  // Save the contract address to a file
+  fs.writeFileSync("./deployedAddress.txt", contractAddress);
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exit(1);
+  process.exitCode = 1;
 });
