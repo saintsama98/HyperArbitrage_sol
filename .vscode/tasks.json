@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Start Hardhat node in mainnet fork mode",
+			"command": "npx hardhat node --fork https://mainnet.infura.io/v3/dc62284ec9bd41eb86f39e33f8f59c69",
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}

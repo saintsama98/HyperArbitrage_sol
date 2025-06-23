@@ -20,10 +20,21 @@ interface IUniswapV2Router {
 contract ArbitrageBot is FlashLoanSimpleReceiverBase, Ownable {
     event ConstructorLog(address providerAddress);
     event DebugLog(string message, address value);
+    event ArbitrageResult(int256 profit, uint256 finalBalance, uint256 totalOwed);
 
     constructor(address _provider) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_provider)) Ownable(msg.sender) {
         emit DebugLog("Initializing FlashLoanSimpleReceiverBase with provider", _provider);
+        require(_provider != address(0), "Provider address is zero");
+        require(_isContract(_provider), "Provider is not a contract");
         emit DebugLog("Setting owner to", msg.sender);
+    }
+
+    function _isContract(address addr) private view returns (bool) {
+        uint256 size;
+        assembly {
+            size := extcodesize(addr)
+        }
+        return size > 0;
     }
 
     struct ArbitrageParams {
@@ -80,9 +91,21 @@ contract ArbitrageBot is FlashLoanSimpleReceiverBase, Ownable {
             block.timestamp
         );
 
-        // Repay flash loan + premium
-        uint total = amount + premium;
-        IERC20(asset).approve(address(POOL), total);
+        // Calculate final balance of tokenA after swaps
+        uint finalBalance = IERC20(arbParams.tokenA).balanceOf(address(this));
+
+        // Calculate profit (final balance - amount owed to Aave)
+        uint totalOwed = amount + premium;
+        int256 profit = int256(finalBalance) - int256(totalOwed);
+
+
+        emit ArbitrageResult(profit, finalBalance, totalOwed);
+
+        // Optionally revert if not profitable
+        require(profit > 0, "Arbitrage not profitable");
+
+        // Approve Aave to pull repayment
+        IERC20(asset).approve(address(POOL), totalOwed);
 
         return true;
     }
